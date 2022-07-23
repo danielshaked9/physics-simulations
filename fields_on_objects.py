@@ -3,7 +3,7 @@ import taichi as ti
 arch = ti.vulkan if ti._lib.core.with_vulkan() else ti.cuda
 ti.init(arch=arch)
 dim=3
-dt = 1e-4
+dt = 2e-4
 pi=ti.math.pi
 rad,mass=1e-4,1e-3 #M,K,S  
 x_border=[0,1]
@@ -20,8 +20,8 @@ N=10000
 
 
 
-n_particles=1000
-rad,mass,Q=6e-2,1e-3,-1
+n_particles=10000
+rad,mass,Q=1e-2,1e-3,1
 
 
 particles=ti.Vector.field(3,ti.f32,shape=(n_particles),needs_grad=True)
@@ -114,13 +114,13 @@ def substep():
 
 
 
-res = (1440, 1200)
-window = ti.ui.Window("test", res, vsync=True)
+res = (500, 500)
+window = ti.ui.Window("test", res, vsync=True,show_window=True)
 
 canvas = window.get_canvas()
 scene = ti.ui.Scene()
 camera = ti.ui.make_camera()
-camera.position(4, 3.8, 4 ) 
+camera.position(1.2, 1.2, 1.2 ) 
 camera.lookat(0.5,0.5,0.5)
 camera.fov(90)
 
@@ -137,7 +137,7 @@ def render():
 
     #scene.particles(sphere,1e-3,color=(0.3,0.1,0.5))
     scene.point_light(pos=(9, 9, 900), color=(1, 1, 1))
-    #scene.point_light(pos=(0, 1, 0), color=(1, 1, 1))
+    scene.point_light(pos=(0, 1, 0), color=(1, 1, 1))
     #scene.point_light(pos=(0, 0, 1), color=(1, 1, 1))
     #scene.point_light(pos=(5, 5, 5), color=(1, 1, 1))
     #scene.point_light(pos=(0.5, 1.5, 1.5), color=(1, 1, 1))
@@ -149,21 +149,31 @@ def render():
 positive=1
 negative=1
 def main():
+    result_dir='3d_particles444'
+    video_manager = ti.tools.VideoManager(output_dir=result_dir, framerate=20, automatic_build=False,)
     frame_id = 0
     init()
     x,y,z = 2,2,2
-    while window.running:
+    #while window.running:
+    for frame in range(110):
 
         render()
         substep()
+        video_manager.write_frame(window.get_image_buffer())
         window.show()
+        #print(f'Frame {frame} is recorded', end='')
 
 
-        #if  y>0.3:
-            #x-=1e-4
-            #y-=3e-3
-            #z-=2e-3
-            #camera.position(x, y, z) 
+        if  y>-2:
+            x-=1e-2
+            y-=15e-3
+            z-=15e-3
+            camera.position(x, y, z) 
+    print()
+    print('Exporting .mp4 and .gif videos...')
+    video_manager.make_video(gif=True,mp4= False)
+    #print(f'MP4 video is saved to {video_manager.get_output_filename("field_describe.mp4")}')
+    print(f'GIF video is saved to {video_manager.get_output_filename("field_describe.gif")}')
 
 
 if __name__ == '__main__':
